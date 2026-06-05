@@ -179,18 +179,18 @@ pip install -r requirements.txt
 В корне проекта есть логи sync.log
 
 Скриншот из DBeaver
-![img.png](img.png)
+![img.png](screen/img.png)
 
-![img_1.png](img_1.png)
+![img_1.png](screen/img_1.png)
 
-![img_2.png](img_2.png)
+![img_2.png](screen/img_2.png)
 
 Скриншот из AD
 
-![img_5.png](img_5.png)
+![img_5.png](screen/img_5.png)
 
-![img_4.png](img_4.png)
+![img_4.png](screen/img_4.png)
 
 Скриншот из Docker
 
-![img_6.png](img_6.png)
+![img_6.png](screen/img_6.png)

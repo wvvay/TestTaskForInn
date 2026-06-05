@@ -12,7 +12,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("sync.log", encoding="utf-8"),
+        logging.FileHandler("logs/sync.logs", encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
