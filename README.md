@@ -138,8 +138,10 @@ PostgreSQL был развернут с использованием Docker.
 
 - Windows Server 2022
 - Active Directory Domain Services
+- RDP
 - Docker
 - PostgreSQL 16:alpine
+- DBeaver
 - Python 3.12
 - ldap3
 - psycopg2
@@ -172,3 +174,23 @@ pip install -r requirements.txt
 ### Заполните env 
 Создайте файл `.env` и заполните необходимые данные 
 
+## Демонстрация работы
+
+В корне проекта есть логи sync.log
+
+Скриншот из DBeaver
+![img.png](img.png)
+
+![img_1.png](img_1.png)
+
+![img_2.png](img_2.png)
+
+Скриншот из AD
+
+![img_5.png](img_5.png)
+
+![img_4.png](img_4.png)
+
+Скриншот из Docker
+
+![img_6.png](img_6.png)
