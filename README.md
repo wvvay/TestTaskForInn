@@ -139,8 +139,36 @@ PostgreSQL был развернут с использованием Docker.
 - Windows Server 2022
 - Active Directory Domain Services
 - Docker
-- PostgreSQL
+- PostgreSQL 16:alpine
 - Python 3.12
 - ldap3
 - psycopg2
 - VirtualBox
+
+## Инструкция по запуску (QUICK START)
+
+### Поднимаем БД в Docker 
+
+Запускаем команду в терминале находясь в корне проекта
+```commandline
+docker compose up -d
+```
+
+### Установка библиотек для скрипта
+
+Cоздайте `env` окружение
+```commandline
+python -m venv .venv
+```
+Запустите это окружение
+```commandline
+\.venv\Scripts\activate.bat
+```
+Запускаем установку библиотек
+```commandline
+pip install -r requirements.txt
+```
+
+### Заполните env 
+Создайте файл `.env` и заполните необходимые данные 
+
