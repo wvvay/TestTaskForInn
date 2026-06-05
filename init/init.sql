@@ -1,0 +1,26 @@
+CREATE TABLE Users
+(
+    Id SERIAL PRIMARY KEY,
+    UPN VARCHAR(100) UNIQUE NOT NULL,
+    SAMAccountName VARCHAR(100),
+    FirstName VARCHAR(50),
+    LastName VARCHAR(50),
+    MiddleName VARCHAR(50),
+    LastLogon TIMESTAMP
+);
+
+CREATE TABLE Groups
+(
+    Id SERIAL PRIMARY KEY,
+    Name VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE UsersGroups
+(
+    UserId INTEGER,
+    GroupId INTEGER,
+    PRIMARY KEY (UserId, GroupId),
+
+    FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE,
+    FOREIGN KEY (GroupId) REFERENCES Groups(Id) ON DELETE CASCADE
+);

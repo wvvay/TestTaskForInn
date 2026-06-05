@@ -1,31 +1,50 @@
 from ldap3 import Server, Connection, ALL
 import psycopg2
+from dotenv import load_dotenv
+import os
 
 # -------------------------
-# CONNECT TO ACTIVE DIRECTORY
+# LOAD .env // Загрузка переменных
 # -------------------------
 
-server = Server('192.168.0.5', get_info=ALL)
+load_dotenv()
+
+DOMEN = os.getenv("DOMEN")
+SERVER_AD = os.getenv("SERVER_AD")
+ADMIN_LOGIN = os.getenv("ADMIN_LOGIN")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+
+# -------------------------
+# CONNECT TO ACTIVE DIRECTORY // Подключение к Контроллеру доменов
+# -------------------------
+
+server = Server(SERVER_AD, get_info=ALL)
 
 conn = Connection(
     server,
-    user='BOSS\\Администратор',
-    password='mudarisov@2003',
+    user=ADMIN_LOGIN,
+    password=ADMIN_PASSWORD,
     auto_bind=True
 )
 
 print("AD подключен")
 
 # -------------------------
-# CONNECT TO POSTGRES
+# CONNECT TO POSTGRESQL // Подключение к Postgresql развернутый в докере
 # -------------------------
 
 db = psycopg2.connect(
-    host="localhost",
-    database="BossDB",
-    port="5432",
-    user="boss",
-    password="boss"
+    host=POSTGRES_HOST,
+    database=POSTGRES_DB,
+    user=POSTGRES_USER,
+    password=POSTGRES_PASSWORD,
+    port=POSTGRES_PORT
 )
 
 cursor = db.cursor()
@@ -33,11 +52,11 @@ cursor = db.cursor()
 print("PostgreSQL подключен")
 
 # -------------------------
-# GET USERS FROM AD
+# GET USERS FROM AD // Получаем пользователей из AD
 # -------------------------
 
 conn.search(
-    search_base='dc=boss,dc=com',
+    search_base=f"dc={DOMEN.split('.')[0]},dc={DOMEN.split('.')[1]}",
     search_filter='(&(objectClass=user)(userPrincipalName=*))',
     attributes=[
         'userPrincipalName',
@@ -50,7 +69,7 @@ conn.search(
 users = conn.entries
 
 # -------------------------
-# INSERT USERS
+# INSERT USERS // Вставка в БД
 # -------------------------
 
 for u in users:
@@ -71,11 +90,26 @@ for u in users:
 print("Users синхронизированы")
 
 # -------------------------
-# GET GROUPS FROM AD
+# DELETE USERS NOT IN AD //Удаляем пользователей которых нет в AD
+# -------------------------
+
+ad_upns = [str(u.userPrincipalName) for u in users]
+
+cursor.execute("SELECT UPN FROM Users")
+db_upns = [row[0] for row in cursor.fetchall()]
+
+for upn in db_upns:
+    if upn not in ad_upns:
+        cursor.execute("DELETE FROM Users WHERE UPN=%s", (upn,))
+
+print("Лишние пользователи удалены")
+
+# -------------------------
+# GET GROUPS FROM AD // Получаем группы из AD
 # -------------------------
 
 conn.search(
-    search_base='dc=boss,dc=com',
+    search_base=f"dc={DOMEN.split('.')[0]},dc={DOMEN.split('.')[1]}",
     search_filter='(objectClass=group)',
     attributes=['cn']
 )
@@ -83,7 +117,7 @@ conn.search(
 groups = conn.entries
 
 # -------------------------
-# INSERT GROUPS
+# INSERT GROUPS // Вставка групп в AD
 # -------------------------
 
 for g in groups:
@@ -98,15 +132,36 @@ for g in groups:
 print("Groups синхронизированы")
 
 # -------------------------
-# BUILD USERS-GROUPS RELATIONSHIP
+# DELETE GROUPS NOT IN AD // Удаление групп которых нет в AD
+# -------------------------
+
+ad_groups = [str(g.cn) for g in groups]
+
+cursor.execute("SELECT Name FROM Groups")
+db_groups = [row[0] for row in cursor.fetchall()]
+
+for g in db_groups:
+    if g not in ad_groups:
+        cursor.execute("DELETE FROM Groups WHERE Name=%s", (g,))
+
+print("Лишние группы удалены")
+
+# -------------------------
+# CLEAR USERS-GROUPS //Удаляем связи
+# -------------------------
+
+cursor.execute("DELETE FROM UsersGroups")
+print("UsersGroups очищена")
+
+# -------------------------
+# USERS-GROUPS //Связываем
 # -------------------------
 
 for g in groups:
     group_name = str(g.cn)
 
-    # get group DN members
     conn.search(
-        search_base='dc=boss,dc=com',
+        search_base=f"dc={DOMEN.split('.')[0]},dc={DOMEN.split('.')[1]}",
         search_filter=f'(cn={group_name})',
         attributes=['member']
     )
@@ -117,7 +172,12 @@ for g in groups:
     group_entry = conn.entries[0]
 
     cursor.execute("SELECT Id FROM Groups WHERE Name=%s", (group_name,))
-    group_id = cursor.fetchone()[0]
+    group_id = cursor.fetchone()
+
+    if not group_id:
+        continue
+
+    group_id = group_id[0]
 
     if hasattr(group_entry, 'member'):
 
@@ -147,7 +207,7 @@ for g in groups:
 print("UsersGroups синхронизированы")
 
 # -------------------------
-# COMMIT
+# COMMIT //Сохраняем и закрываем соединение
 # -------------------------
 
 db.commit()
@@ -156,4 +216,4 @@ cursor.close()
 db.close()
 conn.unbind()
 
-print("ГОТОВО: синхронизация завершена")
+print("Скрипт завершил работу")
